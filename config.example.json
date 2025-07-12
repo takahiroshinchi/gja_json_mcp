@@ -1,0 +1,27 @@
+{
+  "api_token": "your_bria_api_token_here",
+  "model_version": "2.3",
+  "default_settings": {
+    "num_results": 1,
+    "sync": true,
+    "content_moderation": false,
+    "timeout": 60
+  },
+  "server": {
+    "name": "bria-image-generator",
+    "version": "1.0.0",
+    "description": "Bria.ai Image Generation MCP Server"
+  },
+  "api": {
+    "base_url": "https://engine.prod.bria-api.com/v1/",
+    "text_to_image_endpoint": "text-to-image/base/{model_version}",
+    "rate_limit": {
+      "requests_per_minute": 60,
+      "max_concurrent": 4
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  }
+}

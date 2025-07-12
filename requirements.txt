@@ -1,0 +1,15 @@
+# Bria.ai MCP Server Dependencies
+
+# MCP Framework
+mcp>=0.9.0
+
+# HTTP Client
+httpx>=0.24.0
+
+# Standard library dependencies (no need to install)
+# - json
+# - os
+# - sys
+# - asyncio
+# - typing
+# - urllib.parse
