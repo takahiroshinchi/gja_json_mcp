@@ -1,0 +1,1 @@
+# Tests for Bria.ai MCP Server

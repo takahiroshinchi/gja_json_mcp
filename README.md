@@ -9,34 +9,69 @@ Bria.aiのAPIを利用してキーワード指定による画像生成を行うM
 - **同期・非同期対応**: 用途に応じて生成方式を選択可能
 - **再現性**: シード値を指定して同じ結果を再現
 - **コンテンツモデレーション**: 不適切なコンテンツのフィルタリング
+- **高速セットアップ**: uvによる高速な依存関係管理
 
 ## 前提条件
 
 - Python 3.8以上
+- [uv](https://docs.astral.sh/uv/) (推奨) または pip
 - Bria.ai APIキー（[Bria.ai](https://bria.ai/)でアカウント作成が必要）
 
 ## インストール
 
-1. **依存関係をインストール**:
+### 🚀 uv を使用した高速セットアップ（推奨）
+
+1. **自動セットアップ**:
 ```bash
-pip install -r requirements.txt
+./setup_uv.sh
 ```
 
-2. **環境変数を設定**:
+2. **手動セットアップ**:
 ```bash
+# uvをインストール（未インストールの場合）
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 依存関係をインストール
+uv sync
+
+# 環境変数を設定
 export BRIA_API_TOKEN="your_bria_api_token_here"
-export BRIA_MODEL_VERSION="2.3"  # オプション（デフォルト：2.3）
+export BRIA_MODEL_VERSION="2.3"  # オプション
+
+# サーバー起動
+uv run python bria_mcp_server.py
 ```
 
-3. **実行権限を付与**:
+### 🐍 従来のpipを使用したセットアップ
+
+1. **自動セットアップ**:
 ```bash
-chmod +x bria_mcp_server.py
+./setup.sh
+```
+
+2. **手動セットアップ**:
+```bash
+# 依存関係をインストール
+pip install -r requirements.txt
+
+# 環境変数を設定
+export BRIA_API_TOKEN="your_bria_api_token_here"
+export BRIA_MODEL_VERSION="2.3"  # オプション
+
+# サーバー起動
+python bria_mcp_server.py
 ```
 
 ## 使用方法
 
 ### MCPサーバーとして実行
 
+#### uvを使用する場合（推奨）
+```bash
+uv run python bria_mcp_server.py
+```
+
+#### pipを使用する場合
 ```bash
 python bria_mcp_server.py
 ```
@@ -79,6 +114,58 @@ python bria_mcp_server.py
 }
 ```
 
+## 開発・メンテナンス
+
+### uvを使用した開発コマンド
+
+```bash
+# 依存関係の同期
+uv sync
+
+# パッケージの追加
+uv add <package_name>
+
+# 開発用依存関係の追加
+uv add --dev <package_name>
+
+# 仮想環境でコマンド実行
+uv run <command>
+
+# コードフォーマット
+uv run black .
+
+# リンター実行
+uv run ruff check
+
+# リンター自動修正
+uv run ruff check --fix
+
+# 型チェック
+uv run mypy .
+
+# テスト実行
+uv run pytest
+
+# Pythonバージョンの管理
+uv python install 3.11
+uv python pin 3.11
+```
+
+### 従来のpipを使用した開発コマンド
+
+```bash
+# 仮想環境の作成
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate  # Windows
+
+# 依存関係のインストール
+pip install -r requirements.txt
+
+# 開発用依存関係のインストール
+pip install -r requirements-dev.txt  # 別途作成する場合
+```
+
 ## APIについて
 
 ### Bria.ai API仕様
@@ -116,6 +203,15 @@ python bria_mcp_server.py
 }
 ```
 
+### pyproject.toml設定
+
+プロジェクト設定は `pyproject.toml` で管理されており、以下の機能が含まれています：
+
+- 依存関係管理
+- 開発ツール設定（black、ruff、mypy等）
+- プロジェクトメタデータ
+- ビルド設定
+
 ## トラブルシューティング
 
 ### 一般的な問題
@@ -132,9 +228,20 @@ python bria_mcp_server.py
    - プロンプトの内容を確認
    - コンテンツモデレーションの設定を確認
 
+4. **uv関連の問題**:
+   - uvのバージョンを確認: `uv --version`
+   - 仮想環境の再作成: `uv sync --reload`
+
 ### ログ
 
 サーバーは標準エラー出力にログを出力します：
+
+#### uvを使用する場合
+```bash
+uv run python bria_mcp_server.py 2> server.log
+```
+
+#### pipを使用する場合
 ```bash
 python bria_mcp_server.py 2> server.log
 ```
@@ -146,11 +253,19 @@ python bria_mcp_server.py 2> server.log
 - APIレート制限の対象
 - コンテンツモデレーションにより一部のプロンプトが拒否される可能性
 
+## なぜuvを推奨するのか？
+
+- **高速**: 従来のpipより大幅に高速な依存関係解決
+- **確実性**: ロックファイルによる完全に再現可能な環境
+- **シンプル**: 単一ツールでパッケージ管理からPython環境管理まで
+- **最新**: 最新のPythonパッケージング標準に準拠
+
 ## サポート
 
 - [Bria.ai公式ドキュメント](https://docs.bria.ai/)
 - [Bria.ai APIリファレンス](https://bria-ai-api-docs.redoc.ly/)
 - [MCPプロトコル仕様](https://modelcontextprotocol.io/)
+- [uv公式ドキュメント](https://docs.astral.sh/uv/)
 
 ## ライセンス
 
@@ -160,6 +275,21 @@ python bria_mcp_server.py 2> server.log
 
 プルリクエストやイシューの報告を歓迎します。
 
+コントリビューション前に以下を実行してください：
+```bash
+# コードフォーマット
+uv run black .
+
+# リンターチェック
+uv run ruff check --fix
+
+# 型チェック
+uv run mypy .
+
+# テスト実行
+uv run pytest
+```
+
 ## 変更履歴
 
 ### v1.0.0
@@ -167,3 +297,5 @@ python bria_mcp_server.py 2> server.log
 - Text-to-Image生成機能
 - 同期・非同期生成対応
 - コンテンツモデレーション機能
+- uvサポート追加
+- pyproject.toml設定追加
