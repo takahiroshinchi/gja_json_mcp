@@ -1,4 +1,4 @@
-# Bria.ai MCP Server
+# Bria.ai Image Generator MCP Server
 
 Bria.aiのAPIを利用してキーワード指定による画像生成を行うMCP（Model Context Protocol）サーバーです。
 
