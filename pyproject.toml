@@ -1,5 +1,5 @@
 [project]
-name = "bria-mcp-server"
+name = "bria-ai-image-generator-mcp"
 version = "1.0.0"
 description = "Bria.ai Image Generation MCP Server"
 authors = [
