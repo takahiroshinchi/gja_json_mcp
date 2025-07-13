@@ -14,12 +14,12 @@ Bria.aiのAPIを利用してキーワード指定による画像生成を行うM
 ## 前提条件
 
 - Python 3.8以上
-- [uv](https://docs.astral.sh/uv/) (推奨) または pip
+- [uv](https://docs.astral.sh/uv/)
 - Bria.ai APIキー（[Bria.ai](https://bria.ai/)でアカウント作成が必要）
 
 ## インストール
 
-### 🚀 uv を使用した高速セットアップ（推奨）
+### 🚀 uvを使用したセットアップ
 
 1. **自動セットアップ**:
 ```bash
@@ -42,38 +42,12 @@ export BRIA_MODEL_VERSION="2.3"  # オプション
 uv run python bria_mcp_server.py
 ```
 
-### 🐍 従来のpipを使用したセットアップ
-
-1. **自動セットアップ**:
-```bash
-./setup.sh
-```
-
-2. **手動セットアップ**:
-```bash
-# 依存関係をインストール
-pip install -r requirements.txt
-
-# 環境変数を設定
-export BRIA_API_TOKEN="your_bria_api_token_here"
-export BRIA_MODEL_VERSION="2.3"  # オプション
-
-# サーバー起動
-python bria_mcp_server.py
-```
-
 ## 使用方法
 
 ### MCPサーバーとして実行
 
-#### uvを使用する場合（推奨）
 ```bash
 uv run python bria_mcp_server.py
-```
-
-#### pipを使用する場合
-```bash
-python bria_mcp_server.py
 ```
 
 ### 利用可能なツール
@@ -116,7 +90,7 @@ python bria_mcp_server.py
 
 ## 開発・メンテナンス
 
-### uvを使用した開発コマンド
+### 開発コマンド
 
 ```bash
 # 依存関係の同期
@@ -149,21 +123,6 @@ uv run pytest
 # Pythonバージョンの管理
 uv python install 3.11
 uv python pin 3.11
-```
-
-### 従来のpipを使用した開発コマンド
-
-```bash
-# 仮想環境の作成
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate  # Windows
-
-# 依存関係のインストール
-pip install -r requirements.txt
-
-# 開発用依存関係のインストール
-pip install -r requirements-dev.txt  # 別途作成する場合
 ```
 
 ## APIについて
@@ -236,14 +195,8 @@ pip install -r requirements-dev.txt  # 別途作成する場合
 
 サーバーは標準エラー出力にログを出力します：
 
-#### uvを使用する場合
 ```bash
 uv run python bria_mcp_server.py 2> server.log
-```
-
-#### pipを使用する場合
-```bash
-python bria_mcp_server.py 2> server.log
 ```
 
 ## 制限事項
@@ -253,12 +206,15 @@ python bria_mcp_server.py 2> server.log
 - APIレート制限の対象
 - コンテンツモデレーションにより一部のプロンプトが拒否される可能性
 
-## なぜuvを推奨するのか？
+## uvの利点
+
+uvは従来のpipに比べて以下の利点があります：
 
 - **高速**: 従来のpipより大幅に高速な依存関係解決
 - **確実性**: ロックファイルによる完全に再現可能な環境
 - **シンプル**: 単一ツールでパッケージ管理からPython環境管理まで
 - **最新**: 最新のPythonパッケージング標準に準拠
+- **効率的**: ディスク使用量とメモリ使用量を最適化
 
 ## サポート
 
