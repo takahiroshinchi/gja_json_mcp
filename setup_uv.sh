@@ -25,8 +25,8 @@ echo "✅ uv が利用可能です: $(uv --version)"
 
 # Python バージョンチェック
 echo "📋 Python バージョンを確認中..."
-if ! uv python pin 3.8 --python-preference only-managed 2>/dev/null; then
-    echo "📦 Python 3.8+ をインストール中..."
+if ! uv python pin 3.10 --python-preference only-managed 2>/dev/null; then
+    echo "📦 Python 3.10+ をインストール中..."
     uv python install 3.11  # 最新の安定版をインストール
     uv python pin 3.11
 fi

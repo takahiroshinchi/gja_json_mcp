@@ -10,8 +10,16 @@ import os
 import sys
 import asyncio
 import httpx
+import traceback
 from typing import Dict, Any, Optional, List
 from urllib.parse import urljoin
+
+# デバッグ用ログ出力
+def debug_log(message: str):
+    """デバッグメッセージをstderrに出力"""
+    print(f"DEBUG: {message}", file=sys.stderr, flush=True)
+
+debug_log("Starting Bria MCP Server...")
 
 # MCPサーバーの基本コンポーネント
 try:
@@ -19,7 +27,9 @@ try:
     from mcp.server import NotificationOptions, Server
     from mcp.server.models import InitializationOptions
     import mcp.server.stdio
+    debug_log("MCP modules imported successfully")
 except ImportError as e:
+    debug_log(f"Error importing MCP modules: {e}")
     print(f"Error importing MCP modules: {e}", file=sys.stderr)
     print("Please install the MCP library: pip install mcp", file=sys.stderr)
     sys.exit(1)
@@ -30,6 +40,7 @@ BRIA_TEXT_TO_IMAGE_ENDPOINT = "text-to-image/base/{model_version}"
 
 # MCPサーバーのインスタンス
 server = Server("bria-image-generator")
+debug_log("MCP Server instance created")
 
 # グローバル変数
 api_token: Optional[str] = None
@@ -39,7 +50,8 @@ http_client: Optional[httpx.AsyncClient] = None
 @server.list_tools()
 async def handle_list_tools() -> List[types.Tool]:
     """利用可能なツールのリストを返す"""
-    return [
+    debug_log("handle_list_tools called")
+    tools = [
         types.Tool(
             name="generate_image",
             description="Generate images using Bria.ai's text-to-image API",
@@ -92,16 +104,23 @@ async def handle_list_tools() -> List[types.Tool]:
             }
         )
     ]
+    debug_log(f"Returning {len(tools)} tools")
+    return tools
 
 @server.call_tool()
 async def handle_call_tool(name: str, arguments: dict) -> List[types.TextContent]:
     """ツールを実行"""
-    if name == "generate_image":
-        return await generate_image(**arguments)
-    elif name == "get_generation_status":
-        return await get_generation_status(**arguments)
-    else:
-        raise ValueError(f"Unknown tool: {name}")
+    debug_log(f"handle_call_tool called with name: {name}")
+    try:
+        if name == "generate_image":
+            return await generate_image(**arguments)
+        elif name == "get_generation_status":
+            return await get_generation_status(**arguments)
+        else:
+            raise ValueError(f"Unknown tool: {name}")
+    except Exception as e:
+        debug_log(f"Error in handle_call_tool: {e}")
+        return [types.TextContent(type="text", text=f"Error: {str(e)}")]
 
 async def generate_image(
     prompt: str,
@@ -111,6 +130,8 @@ async def generate_image(
     content_moderation: bool = False
 ) -> List[types.TextContent]:
     """Bria.ai APIを使用して画像を生成"""
+    
+    debug_log(f"generate_image called with prompt: {prompt}")
     
     if not http_client:
         return [types.TextContent(type="text", text="HTTP client not initialized")]
@@ -185,10 +206,13 @@ async def generate_image(
     except httpx.RequestError as e:
         return [types.TextContent(type="text", text=f"Request error: {str(e)}")]
     except Exception as e:
+        debug_log(f"Error in generate_image: {e}")
         return [types.TextContent(type="text", text=f"Unexpected error: {str(e)}")]
 
 async def get_generation_status(urls: List[str]) -> List[types.TextContent]:
     """非同期生成のステータスを確認"""
+    
+    debug_log(f"get_generation_status called with {len(urls)} URLs")
     
     if not http_client:
         return [types.TextContent(type="text", text="HTTP client not initialized")]
@@ -214,6 +238,7 @@ async def get_generation_status(urls: List[str]) -> List[types.TextContent]:
         return [types.TextContent(type="text", text="\n".join(status_results))]
         
     except Exception as e:
+        debug_log(f"Error in get_generation_status: {e}")
         return [types.TextContent(type="text", text=f"Error checking status: {str(e)}")]
 
 async def main():
@@ -221,28 +246,58 @@ async def main():
     
     global api_token, model_version, http_client
     
-    # 環境変数の確認
-    api_token = os.getenv("BRIA_API_TOKEN")
-    if not api_token:
-        print("Error: BRIA_API_TOKEN environment variable is required", file=sys.stderr)
-        print("Please set your Bria.ai API token:", file=sys.stderr)
-        print("export BRIA_API_TOKEN='your_api_token_here'", file=sys.stderr)
-        sys.exit(1)
+    debug_log("Starting main function...")
     
-    model_version = os.getenv("BRIA_MODEL_VERSION", "2.3")
-    
-    # HTTPクライアントの初期化
-    http_client = httpx.AsyncClient(
-        timeout=60.0,
-        headers={
-            "Content-Type": "application/json",
-            "api_token": api_token
-        }
-    )
-    
-    # MCPサーバーの実行
     try:
+        # 設定の読み込み（環境変数またはconfig.jsonファイル）
+        api_token = os.getenv("BRIA_API_TOKEN")
+        model_version = os.getenv("BRIA_MODEL_VERSION")
+        
+        debug_log(f"Environment variables - API token: {'set' if api_token else 'not set'}, Model version: {model_version}")
+        
+        # config.jsonファイルから読み込み（環境変数が設定されていない場合）
+        if not api_token or not model_version:
+            try:
+                debug_log("Attempting to read config.json...")
+                with open("config.json", "r") as f:
+                    config = json.load(f)
+                    if not api_token:
+                        api_token = config.get("api_token")
+                    if not model_version:
+                        model_version = config.get("model_version", "2.3")
+                debug_log(f"Config loaded - API token: {'set' if api_token else 'not set'}, Model version: {model_version}")
+            except (FileNotFoundError, json.JSONDecodeError) as e:
+                debug_log(f"Config file error: {e}")
+        
+        # デフォルト値の設定
+        if not model_version:
+            model_version = "2.3"
+        
+        # APIトークンの確認
+        if not api_token:
+            debug_log("API token is missing")
+            print("Error: BRIA_API_TOKEN is required", file=sys.stderr)
+            print("Please set your Bria.ai API token either:", file=sys.stderr)
+            print("1. Environment variable: export BRIA_API_TOKEN='your_api_token_here'", file=sys.stderr)
+            print("2. Config file: Edit config.json and set api_token", file=sys.stderr)
+            sys.exit(1)
+        
+        debug_log("API token is available")
+        
+        # HTTPクライアントの初期化
+        http_client = httpx.AsyncClient(
+            timeout=60.0,
+            headers={
+                "Content-Type": "application/json",
+                "api_token": api_token
+            }
+        )
+        debug_log("HTTP client initialized")
+        
+        # MCPサーバーの実行
+        debug_log("Starting MCP server...")
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+            debug_log("STDIO server created, running main loop...")
             await server.run(
                 read_stream,
                 write_stream,
@@ -256,13 +311,18 @@ async def main():
                 )
             )
     except KeyboardInterrupt:
+        debug_log("Server shutdown requested")
         print("Server shutdown requested", file=sys.stderr)
     except Exception as e:
+        debug_log(f"Server error: {str(e)}")
+        debug_log(f"Traceback: {traceback.format_exc()}")
         print(f"Server error: {str(e)}", file=sys.stderr)
         sys.exit(1)
     finally:
         if http_client:
+            debug_log("Closing HTTP client")
             await http_client.aclose()
 
 if __name__ == "__main__":
+    debug_log("Script started directly")
     asyncio.run(main())
